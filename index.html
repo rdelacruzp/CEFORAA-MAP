@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<meta charset="utf-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+    
+<link
+rel="stylesheet"
+href="leaflet.css"
+/>
+
+<script src="leaflet.js"></script>
+
+<style>
+
+html,
+body {
+
+  margin:0;
+  padding:0;
+  height:100%;
+
+}
+
+#map {
+
+  width:100%;
+  height:100vh;
+
+}
+
+/* ================= UI ================= */
+
+.control-box {
+
+  position:absolute;
+
+  top:10px;
+  left:10px;
+
+  z-index:1000;
+
+  background:white;
+
+  padding:10px;
+
+  border-radius:10px;
+
+  box-shadow:0 2px 10px rgba(0,0,0,0.3);
+
+  width:240px;
+
+  font-family:Arial;
+
+  max-height:90vh;
+
+  overflow-y:auto;
+}
+
+button {
+
+  width:100%;
+
+  margin:5px 0;
+
+  padding:10px;
+
+  font-size:16px;
+
+  cursor:pointer;
+}
+
+input[type=range] {
+
+  width:100%;
+}
+
+.year-list {
+
+  border:1px solid #ccc;
+
+  padding:5px;
+
+  max-height:180px;
+
+  overflow-y:auto;
+}
+
+.legend {
+
+  background:white;
+
+  padding:8px;
+
+  line-height:18px;
+
+  border-radius:8px;
+
+  box-shadow:0 0 10px rgba(0,0,0,0.2);
+
+  font-size:13px;
+}
+
+.legend i {
+
+  width:18px;
+
+  height:18px;
+
+  float:left;
+
+  margin-right:8px;
+
+  opacity:0.8;
+}
+
+/* ================= Menu Button ================= */
+
+#menuToggle{
+
+  position:absolute;
+
+  top:10px;
+  left:10px;
+
+  z-index:1100;
+
+  background:white;
+
+  border:none;
+
+  padding:10px 14px;
+
+  border-radius:8px;
+
+  box-shadow:0 2px 8px rgba(0,0,0,0.3);
+
+  font-size:16px;
+
+  cursor:pointer;
+
+  display:none;
+
+  width:auto;   /* ←追加 */
+}
+
+
+/* ================= Smartphone ================= */
+
+@media (max-width:768px){
+
+  #menuToggle{
+
+    display:block;
+
+  }
+
+ .control-box{
+
+    width:160px;
+
+    max-height:85vh;
+
+    left:-180px;
+
+    top:10px;
+
+    transition:left 0.3s ease;
+
+    padding:8px;
+
+    font-size:12px;
+}
+
+  .control-box.open{
+
+    left:10px;
+
+  }
+
+  button{
+
+    font-size:12px;
+
+    padding:6px;
+  }
+
+  .year-list{
+
+    max-height:80px;
+  }
+
+  .legend{
+
+    font-size:10px;
+
+    padding:5px;
+  }
+
+  /* スマホ用ロゴ */
+
+  .project-logo{
+
+    width:55px;
+
+    height:55px;
+
+}
+
+.logo-title{
+
+   font-size:11px;
+
+}
+
+}
+
+.leaflet-top.leaflet-right{
+
+   margin-top:60px;
+
+}
+
+/* ================= Logo ================= */
+
+.logo-container{
+
+   text-align:center;
+
+   margin-bottom:10px;
+
+}
+
+.project-logo{
+
+   width:80px;
+
+   height:80px;
+
+   object-fit:contain;
+
+}
+
+.logo-title{
+
+   font-size:14px;
+
+   font-weight:bold;
+
+   margin-top:5px;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<button id="menuToggle">☰ Menu</button>
+
+<!-- ================= UI ================= -->
+
+<div class="control-box" id="menuBox">
+
+<div class="logo-container">
+
+<img src="logo.png" class="project-logo">
+
+<div class="logo-title">
+Forest Monitoring
+</div>
+
+</div>
+
+<hr>
+
+<b>District</b>
+
+<button onclick="showArea('Huanipaca')">Huanipaca</button>
+<button onclick="showArea('Yanatile')">Yanatile</button>
+<button onclick="showArea('SJO')">San Juan del Oro</button>
+
+<hr>
+    
+<button id="gpsButton" onclick="toggleGPS()">
+📍 GPS ON
+</button>
+
+<hr>
+
+<b>Opacity</b>
+
+<input
+type="range"
+min="0"
+max="1"
+step="0.1"
+value="0.6"
+id="opacitySlider">
+
+<hr>
+
+<label>
+
+<input
+type="checkbox"
+id="labelToggle"
+checked>
+
+Place labels
+
+</label>
+
+<hr>
+
+<b>Fire Years</b>
+
+<div class="year-list">
+
+<label><input type="checkbox" value="2017"> 2017</label><br>
+<label><input type="checkbox" value="2018"> 2018</label><br>
+<label><input type="checkbox" value="2019"> 2019</label><br>
+<label><input type="checkbox" value="2020"> 2020</label><br>
+<label><input type="checkbox" value="2021"> 2021</label><br>
+<label><input type="checkbox" value="2022"> 2022</label><br>
+<label><input type="checkbox" value="2023"> 2023</label><br>
+<label><input type="checkbox" value="2024"> 2024</label><br>
+<label><input type="checkbox" value="2025"> 2025</label><br>
+
+</div>
+
+<button onclick="loadSelectedFires()">
+Show Fires
+</button>
+
+<button onclick="clearFires()">
+Clear Fires
+</button>
+
+</div>
+
+<!-- ================= 地図 ================= -->
+
+<div id="map"></div>
+
+<script>
+
+// ================= 地図 =================
+
+var map = L.map('map',{
+
+   zoomControl:false
+
+}).setView([-13.5, -72.5], 7);
+
+L.control.zoom({
+
+   position:'topright'
+
+}).addTo(map);
+
+// ================= ベースマップ =================
+
+var osm = L.tileLayer(
+
+'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+
+{
+  attribution:'© OpenStreetMap'
+}
+
+).addTo(map);
+
+var esri = L.tileLayer(
+
+'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+
+{
+  attribution:
+    'Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics'
+
+}
+);
+
+// ================= ラベル =================
+
+map.createPane('labelsPane');
+
+map.getPane('labelsPane').style.zIndex = 650;
+
+map.getPane('labelsPane').style.pointerEvents = 'none';
+
+var labels = L.tileLayer(
+
+'https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png',
+
+{
+  pane:'labelsPane'
+}
+
+).addTo(map);
+
+// ================= 状態 =================
+
+var currentArea = null;
+var boundaryLayer = null;
+var fireRiskLayer = null;
+var waterLayer = null;
+var degradationLayer = null;
+var landuseLayer = null;
+var fireLayers = [];
+var overlayControl = null;
+var activeOverlayLayer = null;
+var gpsMarker = null;
+var gpsCircle = null;
+var gpsWatchId = null;
+var gpsEnabled = false;
+var firstGPSFix = true;
+var topLayer = null;
+
+// Overlay追加時
+map.on('overlayadd', function(e){
+
+   // LandUse以外が追加されたら上レイヤ扱い
+   if(e.layer !== landuseLayer){
+
+      topLayer = e.layer;
+
+      topLayer.bringToFront();
+
+      if(boundaryLayer){
+         boundaryLayer.bringToFront();
+      }
+
+   }
+
+});
+
+// Overlay削除時
+map.on('overlayremove', function(e){
+
+   if(topLayer===e.layer){
+
+      topLayer=null;
+
+   }
+
+});
+
+// ================= 年別色 =================
+
+var fireColors = {
+
+  2017:"#e41a1c", // 赤
+  2018:"#377eb8", // 青
+  2019:"#4daf4a", // 緑
+  2020:"#984ea3", // 紫
+  2021:"#ff7f00", // オレンジ
+  2022:"#ffff33", // 黄
+  2023:"#a65628", // 茶
+  2024:"#f781bf", // ピンク
+  2025:"#17becf"  // 水色
+
+};
+
+// ================= データ =================
+
+var areaData = {
+
+  "Huanipaca": {
+
+    bounds:[
+      [-13.58,-73.17],
+      [-13.38,-72.83]
+    ],
+
+    firerisk:'Huanipaca_firerisk.png',
+
+    water:'Huanipaca_water.png',
+
+    degradation:'Huanipaca_degradation.png',
+
+    landuse:'Huanipaca_landuse.png',
+
+    boundary:'Huanipaca.geojson'
+
+  },
+
+  "Yanatile": {
+
+    bounds:[
+      [-13.03,-72.38],
+      [-12.50,-71.82]
+    ],
+
+    firerisk:'Yanatile_firerisk.png',
+
+    water:'Yanatile_water.png',
+
+    degradation:'Yanatile_degradation.png',
+
+    landuse:'Yanatile_landuse.png',
+
+    boundary:'Yanatile.geojson'
+
+  },
+
+  "SJO": {
+
+    bounds:[
+      [-14.27,-69.22],
+      [-14.13,-68.96]
+    ],
+
+    firerisk:'SJO_firerisk.png',
+
+    water:'SJO_water.png',
+
+    degradation:'SJO_degradation.png',
+
+    landuse:'SJO_landuse.png',
+
+    boundary:'SJO.geojson'
+
+  }
+
+};
+
+// ================= ラベル ON/OFF =================
+
+document.getElementById("labelToggle")
+
+.addEventListener("change", function(e){
+
+  if(e.target.checked){
+
+    map.addLayer(labels);
+
+  } else {
+
+    map.removeLayer(labels);
+
+  }
+
+});
+
+// ================= 透明度 =================
+document.getElementById("opacitySlider")
+.addEventListener("input", function(e){
+
+   var opacity = parseFloat(e.target.value);
+
+   if(topLayer){
+
+      topLayer.setOpacity(opacity);
+
+   }
+
+});
+
+// ================= エリア表示 =================
+
+function showArea(area){
+
+  currentArea = area;
+
+  clearFires();
+
+  var data = areaData[area];
+
+  map.fitBounds(data.bounds);
+
+  // ===== 古いレイヤ削除 =====
+
+  if(boundaryLayer){
+
+    map.removeLayer(boundaryLayer);
+
+  }
+
+  if(fireRiskLayer){
+
+    map.removeLayer(fireRiskLayer);
+
+  }
+
+  if(waterLayer){
+
+    map.removeLayer(waterLayer);
+
+  }
+
+  if(degradationLayer){
+
+    map.removeLayer(degradationLayer);
+
+  }
+
+  if(landuseLayer){
+
+   map.removeLayer(landuseLayer);
+
+  }
+
+// ===== PNG Overlay =====
+
+fireRiskLayer = L.imageOverlay(
+  data.firerisk,
+  data.bounds,
+  {opacity:0.6}
+);
+
+waterLayer = L.imageOverlay(
+  data.water,
+  data.bounds,
+  {opacity:0.6}
+);
+
+degradationLayer = L.imageOverlay(
+  data.degradation,
+  data.bounds,
+  {opacity:0.6}
+);
+
+landuseLayer = L.imageOverlay(
+  data.landuse,
+  data.bounds,
+  {
+    opacity:0.7
+  }
+);
+
+// 念のため他は削除
+if(map.hasLayer(waterLayer)){
+  map.removeLayer(waterLayer);
+}
+
+if(map.hasLayer(degradationLayer)){
+  map.removeLayer(degradationLayer);
+}
+
+  // ===== Overlay Control =====
+
+  if(overlayControl){
+
+    map.removeControl(overlayControl);
+
+  }
+
+  overlayControl = L.control.layers(
+
+     {
+
+      "🗺 Background Map":osm,
+      "🛰 Satellite":esri
+
+     },
+
+     {
+
+       "🌾 Land Use":landuseLayer,
+       "🌲 Forest Degradation":degradationLayer,
+       "🔥 Fire Risk":fireRiskLayer,
+       "💧 Water Resources":waterLayer
+
+     },
+
+     {
+       collapsed: window.innerWidth <=768
+     }
+
+    ).addTo(map);
+
+
+  // ===== Land Use Legend ON/OFF =====
+
+    landuseLayer.on("add",function(){
+
+       landuseLegend.addTo(map);
+
+    });
+
+    landuseLayer.on("remove",function(){
+
+       map.removeControl(landuseLegend);
+
+    });
+
+
+  // ===== Boundary =====
+
+  fetch(data.boundary)
+
+  .then(function(response){
+
+    return response.json();
+
+  })
+
+  .then(function(geojson){
+
+    boundaryLayer = L.geoJSON(
+
+      geojson,
+
+      {
+
+        style:{
+
+          color:"red",
+
+          weight:3,
+
+          fillOpacity:0
+
+        }
+
+      }
+
+    ).addTo(map);
+
+    boundaryLayer.bringToFront();
+
+    // スマホならメニュー閉じる
+    if(window.innerWidth<=768){
+
+    document
+    .getElementById("menuBox")
+    .classList.remove("open");
+
+}
+
+  });
+
+}
+
+// ================= 火災表示 =================
+
+function loadSelectedFires(){
+
+  if(!currentArea){
+
+    alert("Select district first");
+
+    return;
+  }
+
+  clearFires();
+
+  var checkedYears =
+
+    document.querySelectorAll(
+      '.year-list input:checked'
+    );
+    // 年が1つ以上選ばれたら表示
+
+  if(checkedYears.length>0){
+
+     legend.addTo(map);
+
+  }
+
+  checkedYears.forEach(item => {
+
+    var year = item.value;
+
+    var path =
+
+      'fires/' +
+      currentArea +
+      '_fire_' +
+      year +
+      '.geojson';
+
+    fetch(path)
+
+    .then(function(response){
+
+      if(!response.ok){
+
+        throw new Error(path);
+
+      }
+
+      return response.json();
+
+    })
+
+    .then(function(data){
+
+      var color =
+        fireColors[year];
+
+      var layer = L.geoJSON(data, {
+
+        style:function(){
+
+          return {
+
+            color:color,
+
+            weight:1,
+
+            fillColor:color,
+
+            fillOpacity:parseFloat(
+
+              document.getElementById(
+                "opacitySlider"
+              ).value
+
+            )
+
+          };
+
+        },
+
+        pointToLayer:function(feature, latlng){
+
+          return L.circleMarker(latlng, {
+
+            radius:5,
+
+            fillColor:color,
+
+            color:"#000",
+
+            weight:1,
+
+            fillOpacity:parseFloat(
+
+              document.getElementById(
+                "opacitySlider"
+              ).value
+
+            )
+
+          });
+
+        }
+
+      }).addTo(map);
+
+      fireLayers.push(layer);
+
+      layer.bringToFront();
+
+      if(boundaryLayer){
+
+        boundaryLayer.bringToFront();
+
+      }
+
+    })
+
+    .catch(function(error){
+
+      console.log(error);
+
+      alert(
+        "Cannot load:\n" + path
+      );
+
+    });
+
+  });
+
+}
+
+// ================= 火災削除 =================
+
+function clearFires(){
+
+  fireLayers.forEach(layer => {
+
+    map.removeLayer(layer);
+
+  });
+
+  fireLayers=[];
+
+  map.removeControl(legend);
+
+}
+// ================= Land Use Legend =================
+
+var landuseLegend=L.control({
+
+   position:'bottomright'
+
+});
+
+landuseLegend.onAdd=function(map){
+
+   var div=L.DomUtil.create(
+      'div',
+      'legend'
+   );
+
+   div.innerHTML=
+   "<b>Land Use</b><br>"+
+
+   '<i style="background:#3ebc00"></i>Bosque<br>'+
+   '<i style="background:#2380d1"></i>Plantación<br>'+
+   '<i style="background:#f4d000"></i>Matrral<br>'+
+   '<i style="background:#ff6500"></i>Agrofirestal<br>'+
+   '<i style="background:#ba70cc"></i>Agricultura<br>'+
+   '<i style="background:#aee173"></i>Pasto<br>'+
+   '<i style="background:#513ece"></i>Rocas<br>'+
+   '<i style="background:#33dcba"></i>Acuática<br>';
+
+   return div;
+
+};
+
+// ================= 凡例 =================
+
+var legend = L.control({
+
+  position:'bottomright'
+
+});
+
+legend.onAdd = function(map){
+
+  var div = L.DomUtil.create(
+    'div',
+    'legend'
+  );
+
+  div.innerHTML +=
+    "<b>Fire Years</b><br>";
+
+  for(var year in fireColors){
+
+    div.innerHTML +=
+
+      '<i style="background:' +
+      fireColors[year] +
+      '"></i>' +
+
+      year +
+
+      '<br>';
+
+  }
+
+  return div;
+};
+
+// ================= GPS =================
+
+function toggleGPS(){
+
+  if(!gpsEnabled){
+
+    startGPS();
+
+  }else{
+
+    stopGPS();
+
+  }
+
+}
+
+function startGPS(){
+
+  if(!navigator.geolocation){
+
+    alert("Geolocation is not supported");
+
+    return;
+
+  }
+
+  gpsEnabled = true;
+
+  document.getElementById("gpsButton")
+    .innerHTML = "❌ GPS OFF";
+
+  gpsWatchId = navigator.geolocation.watchPosition(
+
+    function(position) {
+
+        var lat = position.coords.latitude;
+        var lon = position.coords.longitude;
+        var accuracy = position.coords.accuracy;
+
+        var latlng = [lat, lon];
+
+        // 古いGPS削除
+        if (gpsMarker) {
+
+            map.removeLayer(gpsMarker);
+
+        }
+
+        if (gpsCircle) {
+
+            map.removeLayer(gpsCircle);
+
+        }
+
+        // 現在地マーカー
+        gpsMarker = L.marker(latlng)
+            .addTo(map);
+
+        // 精度円
+        gpsCircle = L.circle(latlng, {
+
+            radius: accuracy,
+            color: '#136aec',
+            fillColor: '#136aec',
+            fillOpacity: 0.15
+
+        }).addTo(map);
+
+        // 初回だけ現在地へ移動
+        if (firstGPSFix) {
+
+            map.setView(latlng, 15);
+
+            firstGPSFix = false;
+
+        }
+    },
+
+    function(error){
+
+      console.log(error);
+
+      alert("Cannot get GPS");
+
+    },
+
+    {
+
+      enableHighAccuracy:true,
+      maximumAge:0,
+      timeout:10000
+
+    }
+
+  );
+
+}
+
+function stopGPS(){
+
+  gpsEnabled = false;
+
+  document.getElementById("gpsButton")
+    .innerHTML = "📍 GPS ON";
+
+  if(gpsWatchId !== null){
+
+    navigator.geolocation.clearWatch(gpsWatchId);
+
+  }
+
+  if(gpsMarker){
+
+    map.removeLayer(gpsMarker);
+
+  }
+
+  if(gpsCircle){
+
+    map.removeLayer(gpsCircle);
+
+  }
+  // 次回ON時に再び中央移動するため
+  firstGPSFix = true;
+}
+
+// ================= Menu Open / Close =================
+
+document
+.getElementById("menuToggle")
+.addEventListener("click",function(){
+
+    document
+    .getElementById("menuBox")
+    .classList.toggle("open");
+
+});
+
+</script>
+
+</body>
+</html>
